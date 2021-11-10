@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/menu_aToz"
+        android:title="Name (A -> Z)" />
+    <item
+        android:id="@+id/menu_zToa"
+        android:title="Name (Z -> A)" />
+    <item
+        android:id="@+id/menu_dataAsc"
+        android:title="Data (Ascending)" />
+    <item
+        android:id="@+id/menu_dateDesc"
+        android:title="Date (Descending)" />
+    <item
+        android:id="@+id/menu_AmountAsc"
+        android:title="Amount (Ascending)" />
+    <item
+        android:id="@+id/menu_AmountDesc"
+        android:title="Amount (Descending)" />
+
+    <item
+        android:id="@+id/filter"
+        android:orderInCategory="300"
+        android:title="Filter"
+        android:icon="@drawable/ic_baseline_filter_alt_24"
+        app:showAsAction="ifRoom">
+    </item>
+
+</menu>

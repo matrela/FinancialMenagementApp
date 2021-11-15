@@ -1,8 +1,5 @@
 package com.example.application;
 
-import android.content.Context;
-
-import java.util.ArrayList;
 import java.util.List;
 
 public class Balance {

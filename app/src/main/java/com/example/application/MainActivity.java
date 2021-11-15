@@ -5,7 +5,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -19,9 +18,10 @@ public class MainActivity extends AppCompatActivity {
     //PL money format (2 decimals)
     DecimalFormat plDf = new DecimalFormat("#,##0.00");
 
-    LinearLayout linearLayout_ViewAll, linearLayout_Add;
+    LinearLayout linearLayout_ViewAll, linearLayout_Add, linearLayout_updateData;
     ImageView refreshImage;
     TextView txt_balance;
+    TextView txt_view_Eur, txt_view_Usd, txt_view_Gbp, txt_view_chf;
 
     DataBaseHelper dataBaseHelper;
 
@@ -29,6 +29,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        CurrencyRates currencyRates = new CurrencyRates(MainActivity.this);
+        currencyRates.updateCurrencyRates();
 
         txt_balance = findViewById(R.id.textViewBalance);
         linearLayout_ViewAll = findViewById(R.id.ViewAll);
@@ -68,6 +71,23 @@ public class MainActivity extends AppCompatActivity {
                 txt_balance.setText(String.valueOf(plDf.format(balance.getCurrentBalance())) + " PLN");
             }
         });
+
+        txt_view_Eur = findViewById(R.id.EUR);
+        txt_view_Usd = findViewById(R.id.USD);
+        txt_view_Gbp = findViewById(R.id.GBP);
+        txt_view_chf = findViewById(R.id.CHF);
+
+        linearLayout_updateData = findViewById(R.id.CurrencyRate);
+        linearLayout_updateData.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                txt_view_Eur.setText("EUR: " + plDf.format(currencyRates.getEUR()) + " PLN");
+                txt_view_Usd.setText("USD: " + plDf.format(currencyRates.getUSD()) + " PLN");
+                txt_view_Gbp.setText("GBP: " + plDf.format(currencyRates.getGBP()) + " PLN");
+                txt_view_chf.setText("CHF: " + plDf.format(currencyRates.getCHF()) + " PLN");
+            }
+        });
+
 
     }
 

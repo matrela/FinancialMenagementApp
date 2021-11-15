@@ -3,7 +3,6 @@ package com.example.application;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
-import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
@@ -45,7 +44,6 @@ public class DataBaseHelper extends SQLiteOpenHelper {
 
         cv.put(COLUMN_NAME, dataModel.getName());
         cv.put(COLUMN_AMOUNT, dataModel.getAmount());
-        System.out.println(dataModel.getAmount());
         cv.put(COLUMN_CATEGORY, dataModel.getCategory());
         cv.put(COLUMN_DATE, dataModel.getDate());
 
@@ -100,7 +98,6 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         }
         else {
             //failure. do not add anything to the list.
-
         }
 
         // close both the cursor and the db when done.
@@ -131,9 +128,6 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 String date = cursor.getString(4);
                 newDataModel = new DataModel(ID, name, amount, category, date);
             }
-
-        }else{
-            System.out.println("NULL");
         }
 
         // close both the cursor and the db when done.

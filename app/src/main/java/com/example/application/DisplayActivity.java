@@ -1,11 +1,5 @@
 package com.example.application;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.Menu;
@@ -13,7 +7,14 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.SearchView;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,7 +33,10 @@ public class DisplayActivity extends AppCompatActivity {
 
     Menu menu;
 
-    List<DataModel> DataList = new ArrayList<>();
+    String selectedFilter = "all";
+    boolean[] checkedItems = {false, false, false, false};
+
+    List<DataModel> dataList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,7 +46,7 @@ public class DisplayActivity extends AppCompatActivity {
 
         dataBaseHelper = new DataBaseHelper(DisplayActivity.this);
 
-        DataList = dataBaseHelper.getAll();
+        dataList = dataBaseHelper.getAll();
 
         recyclerView = findViewById(R.id.rv_dataList);
         recyclerView.setHasFixedSize(true);
@@ -52,12 +56,56 @@ public class DisplayActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(layoutManager);
 
         // specify an adapter
-        mAdapter = new RecyclerViewAdapter(DataList, DisplayActivity.this);
+        mAdapter = new RecyclerViewAdapter(dataList, DisplayActivity.this);
         recyclerView.setAdapter(mAdapter);
 
-        Collections.sort(DataList, DataModel.DateDescendingComparator);
+        Collections.sort(dataList, DataModel.DateDescendingComparator);
         mAdapter.notifyDataSetChanged();
 
+        searchWidget();
+
+    }
+
+    private void searchWidget(){
+        SearchView searchView = (SearchView) findViewById(R.id.Search);
+
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String s) {
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String s) {
+                List<DataModel> filteredData = new ArrayList<DataModel>();
+
+                for(DataModel d: dataList){
+                    if(d.getName().toLowerCase().contains(s.toLowerCase())){
+                        filteredData.add(d);
+                    }
+                }
+
+                mAdapter = new RecyclerViewAdapter(filteredData, DisplayActivity.this);
+                recyclerView.setAdapter(mAdapter);
+
+                return false;
+            }
+        });
+    }
+
+    private void filter(String status){
+        selectedFilter = status;
+
+        List<DataModel> filteredData = new ArrayList<DataModel>();
+
+        for(DataModel d: dataList){
+            if(d.getCategory().toLowerCase().contains(status.toLowerCase())){
+                filteredData.add(d);
+            }
+        }
+
+        mAdapter = new RecyclerViewAdapter(filteredData, DisplayActivity.this);
+        recyclerView.setAdapter(mAdapter);
     }
 
     @Override
@@ -74,47 +122,62 @@ public class DisplayActivity extends AppCompatActivity {
         switch(item.getItemId()){
             case R.id.menu_aToz:
                 // sort a to z
-                Collections.sort(DataList, DataModel.NameAZComparator);
+                Collections.sort(dataList, DataModel.NameAZComparator);
                 Toast.makeText(DisplayActivity.this, "Sort A to Z", Toast.LENGTH_SHORT).show();
                 mAdapter.notifyDataSetChanged();
                 return true;
             case R.id.menu_zToa:
                 // sort z to a
-                Collections.sort(DataList, DataModel.NameZAComparator);
+                Collections.sort(dataList, DataModel.NameZAComparator);
                 Toast.makeText(DisplayActivity.this, "Sort Z to A", Toast.LENGTH_SHORT).show();
                 mAdapter.notifyDataSetChanged();
                 return true;
             case R.id.menu_dataAsc:
-                Collections.sort(DataList, DataModel.DateAscendingComparator);
+                Collections.sort(dataList, DataModel.DateAscendingComparator);
                 Toast.makeText(DisplayActivity.this, "Sort date ascending", Toast.LENGTH_SHORT).show();
                 mAdapter.notifyDataSetChanged();
                 return true;
             case R.id.menu_dateDesc:
-                Collections.sort(DataList, DataModel.DateDescendingComparator);
+                Collections.sort(dataList, DataModel.DateDescendingComparator);
                 Toast.makeText(DisplayActivity.this, "Sort date descending", Toast.LENGTH_SHORT).show();
                 mAdapter.notifyDataSetChanged();
                 return true;
             case R.id.menu_AmountAsc:
-                Collections.sort(DataList, DataModel.AmountAscendingComparator);
+                Collections.sort(dataList, DataModel.AmountAscendingComparator);
                 Toast.makeText(DisplayActivity.this, "Sort amount ascending", Toast.LENGTH_SHORT).show();
                 mAdapter.notifyDataSetChanged();
                 return true;
             case R.id.menu_AmountDesc:
-                Collections.sort(DataList, DataModel.AmountDescendingComparator);
+                Collections.sort(dataList, DataModel.AmountDescendingComparator);
                 Toast.makeText(DisplayActivity.this, "Sort amount descending", Toast.LENGTH_SHORT).show();
                 mAdapter.notifyDataSetChanged();
                 return true;
             case R.id.filter:
-                AlertDialog.Builder dialog = new AlertDialog.Builder(DisplayActivity.this);
-                dialog.setTitle("Choose filters");
+                AlertDialog.Builder filterDialog = new AlertDialog.Builder(DisplayActivity.this);
+
+                filterDialog.setTitle("Choose filters");
                 String[] categories = {"Bills", "Food", "Services", "Entertainment"};
-                dialog.setMultiChoiceItems(categories, null, new DialogInterface.OnMultiChoiceClickListener() {
+
+                filterDialog.setMultiChoiceItems(categories, checkedItems, new DialogInterface.OnMultiChoiceClickListener() {
                     @Override
-                    public void onClick(DialogInterface dialogInterface, int i, boolean b) {
+                    public void onClick(DialogInterface dialogInterface, int position, boolean isChecked) {
+
+                        if(isChecked){
+                            checkedItems[position] = true;
+                        }else {
+                            checkedItems[position] = false;
+                        }
+
+                        for (int i=0; i<checkedItems.length; i++){
+                            if(checkedItems[i]){
+                                System.out.println(categories[i].toString());
+                                filter(categories[i]);
+                            }
+                        }
 
                     }
                 });
-                dialog.show();
+                filterDialog.show();
                 return true;
         }
 

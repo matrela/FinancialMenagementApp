@@ -1,30 +1,29 @@
 package com.example.application;
 
+import android.content.Context;
+
 import java.util.List;
 
 public class Balance {
-    float currentBalance;
+    static float balance;
 
-    public Balance(float currentBalance) {
-        this.currentBalance = currentBalance;
+    public static float getBalance(Context context) {
+        calculateCurrentBalance (context);
+        return balance;
     }
 
-    public float getCurrentBalance() {
-        return currentBalance;
-    }
+    private static void calculateCurrentBalance (Context context){
 
-    public void setCurrentBalance(float currentBalance) {
-        this.currentBalance = currentBalance;
-    }
+        List<DataModel> dataList;
+        DataBaseHelper dataBaseHelper = new DataBaseHelper(context);
+        dataList = dataBaseHelper.getAll();
 
-    public void calculateCurrentBalance (List<DataModel> dataList){
-
-        currentBalance = 0;
+        balance = 0;
 
         for (int position = 0; position < dataList.size(); position++){
-            currentBalance += dataList.get(position).getAmount();
+            balance += dataList.get(position).getAmount();
         }
-
     }
+
 }
 

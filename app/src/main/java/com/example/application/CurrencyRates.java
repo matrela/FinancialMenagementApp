@@ -16,41 +16,37 @@ import org.json.JSONObject;
 
 public class CurrencyRates {
 
-    Context context;
+    static float EUR;
+    static float USD;
+    static float GBP;
+    static float CHF;
 
-    float EUR;
-    float USD;
-    float GBP;
-    float CHF;
-
-    public float getEUR() {
+    public static float getEUR() {
         return EUR;
     }
 
-    public float getUSD() {
+    public static float getUSD() {
         return USD;
     }
 
-    public float getGBP() {
+    public static float getGBP() {
         return GBP;
     }
 
-    public float getCHF() {
+    public static float getCHF() {
         return CHF;
     }
 
-    public CurrencyRates(Context context) {
-        this.context = context;
+    public static void updateCurrencyRates(Context context, final ServerCallback callback){
+        sendRequest("EUR", context, callback);
+        sendRequest("USD", context, callback);
+        sendRequest("GBP", context, callback);
+        sendRequest("CHF", context, callback);
     }
 
-    public void updateCurrencyRates(){
-        sendRequest("EUR");
-        sendRequest("USD");
-        sendRequest("GBP");
-        sendRequest("CHF");
-    }
 
-    public void sendRequest(String currency_code) {
+
+    public static void sendRequest(String currency_code, Context context, final ServerCallback callback) {
 
         // Instantiate the RequestQueue.
         RequestQueue queue = Volley.newRequestQueue(context);
@@ -96,6 +92,8 @@ public class CurrencyRates {
                                 default:
                                     throw new IllegalStateException("Unexpected value: " + code);
                             }
+
+                            callback.onSuccess(jsonObj);
                         } catch (JSONException e) {
                             Toast.makeText(context, "Json parsing error", Toast.LENGTH_LONG).show();
                         }

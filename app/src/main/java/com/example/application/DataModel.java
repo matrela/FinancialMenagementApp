@@ -2,6 +2,7 @@ package com.example.application;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 
@@ -12,13 +13,15 @@ public class DataModel {
     private float amount;
     private String category;
     private String date;
+    private byte[] image;
 
-    public DataModel(int id, String name, float amount, String category, String date) {
+    public DataModel(int id, String name, float amount, String category, String date, byte[] image) {
         this.id = id;
         this.name = name;
         this.amount = amount;
         this.category = category;
         this.date = date;
+        this.image = image;
     }
 
     // toString for printing the content of class objects
@@ -30,6 +33,7 @@ public class DataModel {
                 ", amount=" + amount +
                 ", category='" + category + '\'' +
                 ", date='" + date + '\'' +
+                ", image='" + Arrays.toString(image) + '\'' +
                 '}';
     }
 
@@ -52,19 +56,21 @@ public class DataModel {
         public int compare(DataModel d1, DataModel d2) {
 
             SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-            Date date1 = null;
+            Date date1;
             try {
-                date1 = sdf.parse(d1.getDate().toString());
-                Date date2 = sdf.parse(d2.getDate().toString());
-                if(date1.compareTo(date2) > 0) {
-                    // Date 1 occurs after Date 2
-                    return 1;
-                } else if(date1.compareTo(date2) < 0) {
-                    // Date 1 occurs before Date 2
-                    return -1;
-                } else if(date1.compareTo(date2) == 0) {
-                    // Both dates are equal
-                    return 0;
+                date1 = sdf.parse(d1.getDate());
+                Date date2 = sdf.parse(d2.getDate());
+                if (date1 != null) {
+                    if(date1.compareTo(date2) > 0) {
+                        // Date 1 occurs after Date 2
+                        return 1;
+                    } else if(date1.compareTo(date2) < 0) {
+                        // Date 1 occurs before Date 2
+                        return -1;
+                    } else if(date1.compareTo(date2) == 0) {
+                        // Both dates are equal
+                        return 0;
+                    }
                 }
             } catch (ParseException e) {
                 e.printStackTrace();
@@ -78,19 +84,21 @@ public class DataModel {
         public int compare(DataModel d1, DataModel d2) {
 
             SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-            Date date2 = null;
+            Date date2;
             try {
-                date2 = sdf.parse(d1.getDate().toString());
-                Date date1 = sdf.parse(d2.getDate().toString());
-                if(date2.compareTo(date1) < 0) {
-                    // Date 2 occurs after Date 1
-                    return 1;
-                } else if(date2.compareTo(date1) > 0) {
-                    // Date 2 occurs before Date 1
-                    return -1;
-                } else if(date2.compareTo(date1) == 0) {
-                    // Both dates are equal
-                    return 0;
+                date2 = sdf.parse(d1.getDate());
+                Date date1 = sdf.parse(d2.getDate());
+                if (date2 != null) {
+                    if(date2.compareTo(date1) < 0) {
+                        // Date 2 occurs after Date 1
+                        return 1;
+                    } else if(date2.compareTo(date1) > 0) {
+                        // Date 2 occurs before Date 1
+                        return -1;
+                    } else if(date2.compareTo(date1) == 0) {
+                        // Both dates are equal
+                        return 0;
+                    }
                 }
             } catch (ParseException e) {
                 e.printStackTrace();
@@ -159,5 +167,13 @@ public class DataModel {
 
     public void setDate(String date) {
         this.date = date;
+    }
+
+    public byte[] getImage() {
+        return image;
+    }
+
+    public void setImage(byte[] image) {
+        this.image = image;
     }
 }

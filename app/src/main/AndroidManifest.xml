@@ -14,6 +14,9 @@
         android:theme="@style/Theme.Application"
         android:usesCleartextTraffic="true">
         <activity
+            android:name=".Notifications"
+            android:exported="false" />
+        <activity
             android:name=".AddEditActivity"
             android:exported="false" />
         <activity

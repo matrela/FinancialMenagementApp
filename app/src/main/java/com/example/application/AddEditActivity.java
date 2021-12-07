@@ -1,31 +1,48 @@
 package com.example.application;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.text.TextUtilsCompat;
-
+import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.DatePickerDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AppCompatActivity;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 public class AddEditActivity extends AppCompatActivity {
 
-    Button btn_add, btn_viewAll, btn_delete;
+    Button btn_add, btn_viewAll, btn_delete, btn_addNewCategory;
     EditText text_name, text_amount, text_date;
     Spinner categorySpinner;
+    ImageButton btn_attachment;
+    ImageView ImageViewAttachment;
 
     private DatePickerDialog.OnDateSetListener DateSetListener;
 
@@ -45,48 +62,46 @@ public class AddEditActivity extends AppCompatActivity {
         text_amount = findViewById(R.id.editTextAmount);
         categorySpinner = findViewById(R.id.editTextCategory);
         text_date = findViewById(R.id.editTextDate);
+        btn_attachment = findViewById(R.id.imageButton);
+        ImageViewAttachment = findViewById(R.id.imageViewAttachment);
+        btn_addNewCategory = findViewById(R.id.buttonNewCategory);
 
-        ArrayList<String> categories = new ArrayList<>();
-        categories.add("Bills");
-        categories.add("Food");
-        categories.add("Services");
-        categories.add("Entertainment");
+        setAdapter();
 
-        ArrayAdapter<String> categoriesAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, categories);
-        categorySpinner.setAdapter(categoriesAdapter);
-
-        Intent intent = getIntent();
-        int id = intent.getIntExtra("id", -1);
-
+        final Intent[] intent = {getIntent()};
+        int id = intent[0].getIntExtra("id", -1);
+        final byte[][] bytes = new byte[1][1];
         if(id >= 0) {
 
             DataBaseHelper dataBaseHelper;
             dataBaseHelper = new DataBaseHelper(AddEditActivity.this);
+
+
+            List<String> categories = dataBaseHelper.getAllCategories();
 
             selectedDataModel = dataBaseHelper.getById(id);
             System.out.println(selectedDataModel.toString());
             text_name.setText(selectedDataModel.getName());
             text_amount.setText(String.valueOf(selectedDataModel.getAmount()));
 
-            switch(selectedDataModel.getCategory()){
-                case "Bills":
-                    categorySpinner.setSelection(0);
-                    break;
-                case "Food":
-                    categorySpinner.setSelection(1);
-                    break;
-                case "Services":
-                    categorySpinner.setSelection(2);
-                    break;
-                case "Entertainment":
-                    categorySpinner.setSelection(3);
-                    break;
-                default:
-                    categorySpinner.setSelection(0);
+            // Setting Spinner category
+            for (int index = 0; index < categories.size(); index++) {
+                if (selectedDataModel.getCategory().equals(categories.get(index))){
+                    System.out.println(selectedDataModel.getCategory() + " equals " + categories.get(index));
+                    System.out.println("INDEX : " + index);
+                    categorySpinner.setSelection(index);
+
+                }
             }
 
             text_date.setText(selectedDataModel.getDate());
 
+            Toast.makeText(this, "IMAGE: " + Arrays.toString(selectedDataModel.getImage()), Toast.LENGTH_SHORT).show();
+            byte[] image = selectedDataModel.getImage();
+            Bitmap BitmapImage;
+            BitmapImage = BitmapFactory.decodeByteArray(image, 0, image.length);
+
+            ImageViewAttachment.setImageBitmap(BitmapImage);
 
         } else{
             text_date.setText(date);
@@ -105,22 +120,26 @@ public class AddEditActivity extends AppCompatActivity {
                 else {
                     DataModel dataModel;
                     try {
+
                         dataModel = new DataModel(-1, text_name.getText().toString(),
                                 Float.parseFloat(text_amount.getText().toString()), categorySpinner.getSelectedItem().toString(),
-                                text_date.getText().toString());
+                                text_date.getText().toString(), bytes[0]);
                         Toast.makeText(AddEditActivity.this, dataModel.toString(), Toast.LENGTH_SHORT).show();
                         System.out.println(dataModel.toString());
 
                         DataBaseHelper dataBaseHelper = new DataBaseHelper(AddEditActivity.this);
 
-                        boolean success = dataBaseHelper.addOne(dataModel);
+                        if(dataBaseHelper.addOne(dataModel)) {
+                            Toast.makeText(AddEditActivity.this, "Success", Toast.LENGTH_SHORT).show();
+                            text_name.setText("");
+                            text_amount.setText("");
+                            categorySpinner.setSelection(0);
+                            text_date.setText(date);
 
-                        Toast.makeText(AddEditActivity.this, "Success", Toast.LENGTH_SHORT).show();
-                        text_name.setText("");
-                        text_amount.setText("");
-                        categorySpinner.setSelection(0);
-                        text_date.setText(date);
-
+                            Intent intent = new Intent(AddEditActivity.this, MainActivity.class);
+                            intent.putExtra("Go to MainActivity", 1);
+                            startActivity(intent);
+                        }
 
                     } catch (Exception e) {
                         Toast.makeText(AddEditActivity.this, "Error adding", Toast.LENGTH_SHORT).show();
@@ -153,6 +172,46 @@ public class AddEditActivity extends AppCompatActivity {
             }
         };
 
+
+        ActivityResultLauncher<Intent> selectImageActivityResultLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                new ActivityResultCallback<ActivityResult>() {
+                    @Override
+                    public void onActivityResult(ActivityResult result) {
+                        if (result.getResultCode() == Activity.RESULT_OK) {
+
+                            Intent data = result.getData();
+
+                            if (data != null) {
+                                Uri selectedImage = data.getData();
+
+                                try {
+                                    Bitmap bitmap = MediaStore.Images.Media.getBitmap(AddEditActivity.this.getContentResolver(), selectedImage);
+                                    ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                                    bitmap.compress(Bitmap.CompressFormat.PNG, 0, stream);
+                                    bytes[0] = stream.toByteArray();
+
+                                    System.out.println(Arrays.toString(bytes[0]));
+
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+
+                            }
+                        }
+                    }
+                });
+
+        btn_attachment.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                selectImageActivityResultLauncher.launch(intent);
+
+            }
+        });
+
         btn_viewAll.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -175,6 +234,60 @@ public class AddEditActivity extends AppCompatActivity {
             }
         });
 
+        btn_addNewCategory.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                AlertDialog.Builder alert = new AlertDialog.Builder(AddEditActivity.this);
+
+                final EditText edittext = new EditText(AddEditActivity.this);
+                alert.setTitle("Adding new category");
+                alert.setMessage("Enter category name");
+
+                alert.setView(edittext);
+
+                alert.setPositiveButton("Add", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        // Getting entered name
+                        String newCategory = edittext.getText().toString();
+
+                        if(newCategory.isEmpty()) {
+                            Toast.makeText(AddEditActivity.this, "Name can't be empty.", Toast.LENGTH_SHORT).show();
+                        }
+                        else
+                        {
+                            // Adding new category
+                            DataBaseHelper dataBaseHelper = new DataBaseHelper(AddEditActivity.this);
+                            if (dataBaseHelper.addNewCategory(newCategory)) {
+                                Toast.makeText(AddEditActivity.this, "Category '" + newCategory + "' added.", Toast.LENGTH_SHORT).show();
+                                setAdapter();
+                            } else {
+                                Toast.makeText(AddEditActivity.this, "Error. Please try again", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    }
+                });
+
+                alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        // close AlertDialog
+                    }
+                });
+
+                alert.show();
+            }
+        });
 
     }
+
+    private void setAdapter() {
+        DataBaseHelper dataBaseHelper;
+        dataBaseHelper = new DataBaseHelper(AddEditActivity.this);
+
+        List<String> categories = dataBaseHelper.getAllCategories();
+
+        ArrayAdapter<String> categoriesAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, categories);
+        categorySpinner.setAdapter(categoriesAdapter);
+    }
+
 }

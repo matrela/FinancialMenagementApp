@@ -1,12 +1,12 @@
 package com.example.application;
 
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
+import android.view.View;
 import android.widget.SearchView;
 import android.widget.Toast;
 
@@ -16,33 +16,37 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 public class DisplayActivity extends AppCompatActivity {
 
-    ListView dataListView;
-
-    ArrayAdapter dataArrayAdapter;
     DataBaseHelper dataBaseHelper;
 
     private RecyclerView recyclerView;
     private RecyclerView.Adapter mAdapter;
-    private RecyclerView.LayoutManager layoutManager;
 
-    Menu menu;
+    boolean[] checkedItems = new boolean[100];
 
-    String selectedFilter = "all";
-    boolean[] checkedItems = {false, false, false, false};
+    private final ArrayList<String> selectedFilters = new ArrayList<>();
+    private String currentSearch;
 
     List<DataModel> dataList = new ArrayList<>();
+    List<DataModel> filteredData = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        selectedFilters.add("all");
+        currentSearch = "";
+
         setContentView(R.layout.activity_display);
+
+        FloatingActionButton fab = findViewById(R.id.fab);
 
         dataBaseHelper = new DataBaseHelper(DisplayActivity.this);
 
@@ -52,22 +56,30 @@ public class DisplayActivity extends AppCompatActivity {
         recyclerView.setHasFixedSize(true);
 
         // use a linear layout manager
-        layoutManager = new LinearLayoutManager(this);
+        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layoutManager);
 
         // specify an adapter
+        Collections.sort(dataList, DataModel.DateDescendingComparator);
         mAdapter = new RecyclerViewAdapter(dataList, DisplayActivity.this);
         recyclerView.setAdapter(mAdapter);
 
-        Collections.sort(dataList, DataModel.DateDescendingComparator);
-        mAdapter.notifyDataSetChanged();
-
         searchWidget();
+
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(DisplayActivity.this, AddEditActivity.class);
+
+                intent.putExtra("Go to AddEditActivity", 1);
+                startActivity(intent);
+            }
+        });
 
     }
 
     private void searchWidget(){
-        SearchView searchView = (SearchView) findViewById(R.id.Search);
+        SearchView searchView = findViewById(R.id.Search);
 
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
@@ -77,11 +89,21 @@ public class DisplayActivity extends AppCompatActivity {
 
             @Override
             public boolean onQueryTextChange(String s) {
-                List<DataModel> filteredData = new ArrayList<DataModel>();
+                currentSearch = s;
+                filteredData.clear();
 
                 for(DataModel d: dataList){
                     if(d.getName().toLowerCase().contains(s.toLowerCase())){
-                        filteredData.add(d);
+                        if(selectedFilters.contains("all")) {
+                            filteredData.add(d);
+                        }
+                        else {
+                            for (String filter: selectedFilters) {
+                                if (d.getCategory().toLowerCase().contains(filter.toLowerCase())) {
+                                    filteredData.add(d);
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -93,14 +115,22 @@ public class DisplayActivity extends AppCompatActivity {
         });
     }
 
-    private void filter(String status){
-        selectedFilter = status;
+    private void filter(String category){
+        selectedFilters.add(category);
 
-        List<DataModel> filteredData = new ArrayList<DataModel>();
+        filteredData.clear();
 
-        for(DataModel d: dataList){
-            if(d.getCategory().toLowerCase().contains(status.toLowerCase())){
-                filteredData.add(d);
+        for (DataModel d : dataList) {
+            for (String filter : selectedFilters) {
+                if (d.getCategory().toLowerCase().contains(filter.toLowerCase())) {
+                    if(currentSearch.equals("")){
+                        filteredData.add(d);
+                    }else {
+                        if(d.getName().toLowerCase().contains(currentSearch.toLowerCase())){
+                            filteredData.add(d);
+                        }
+                    }
+                }
             }
         }
 
@@ -121,44 +151,73 @@ public class DisplayActivity extends AppCompatActivity {
 
         switch(item.getItemId()){
             case R.id.menu_aToz:
-                // sort a to z
-                Collections.sort(dataList, DataModel.NameAZComparator);
+                if(!currentSearch.isEmpty() || !selectedFilters.contains("all")){
+                    Collections.sort(filteredData, DataModel.NameAZComparator);
+                }else {
+                    Collections.sort(dataList, DataModel.NameAZComparator);
+                }
                 Toast.makeText(DisplayActivity.this, "Sort A to Z", Toast.LENGTH_SHORT).show();
                 mAdapter.notifyDataSetChanged();
                 return true;
             case R.id.menu_zToa:
-                // sort z to a
-                Collections.sort(dataList, DataModel.NameZAComparator);
+                if(!currentSearch.isEmpty() || !selectedFilters.contains("all")){
+                    Collections.sort(filteredData, DataModel.NameZAComparator);
+                }else {
+                    Collections.sort(dataList, DataModel.NameZAComparator);
+                }
                 Toast.makeText(DisplayActivity.this, "Sort Z to A", Toast.LENGTH_SHORT).show();
                 mAdapter.notifyDataSetChanged();
                 return true;
             case R.id.menu_dataAsc:
-                Collections.sort(dataList, DataModel.DateAscendingComparator);
+                if(!currentSearch.isEmpty() || !selectedFilters.contains("all")){
+                    Collections.sort(filteredData, DataModel.DateAscendingComparator);
+                }else {
+                    Collections.sort(dataList, DataModel.DateAscendingComparator);
+                }
                 Toast.makeText(DisplayActivity.this, "Sort date ascending", Toast.LENGTH_SHORT).show();
                 mAdapter.notifyDataSetChanged();
                 return true;
             case R.id.menu_dateDesc:
-                Collections.sort(dataList, DataModel.DateDescendingComparator);
+                if(!currentSearch.isEmpty() || !selectedFilters.contains("all")){
+                    Collections.sort(filteredData, DataModel.DateDescendingComparator);
+                }else{
+                    Collections.sort(dataList, DataModel.DateDescendingComparator);
+                }
                 Toast.makeText(DisplayActivity.this, "Sort date descending", Toast.LENGTH_SHORT).show();
                 mAdapter.notifyDataSetChanged();
                 return true;
             case R.id.menu_AmountAsc:
-                Collections.sort(dataList, DataModel.AmountAscendingComparator);
+                if(!currentSearch.isEmpty() || !selectedFilters.contains("all")){
+                    Collections.sort(filteredData, DataModel.AmountAscendingComparator);
+                }else {
+                    Collections.sort(dataList, DataModel.AmountAscendingComparator);
+                }
                 Toast.makeText(DisplayActivity.this, "Sort amount ascending", Toast.LENGTH_SHORT).show();
                 mAdapter.notifyDataSetChanged();
                 return true;
             case R.id.menu_AmountDesc:
-                Collections.sort(dataList, DataModel.AmountDescendingComparator);
+                if(!currentSearch.isEmpty() || !selectedFilters.contains("all")){
+                    Collections.sort(filteredData, DataModel.AmountDescendingComparator);
+                }else{
+                    Collections.sort(dataList, DataModel.AmountDescendingComparator);
+                }
                 Toast.makeText(DisplayActivity.this, "Sort amount descending", Toast.LENGTH_SHORT).show();
                 mAdapter.notifyDataSetChanged();
                 return true;
             case R.id.filter:
+
+                DataBaseHelper dataBaseHelper;
+                dataBaseHelper = new DataBaseHelper(DisplayActivity.this);
+
+                List<String> categories = dataBaseHelper.getAllCategories();
+
+                String[] cat = categories.toArray(new String[0]);
+
+
                 AlertDialog.Builder filterDialog = new AlertDialog.Builder(DisplayActivity.this);
-
                 filterDialog.setTitle("Choose filters");
-                String[] categories = {"Bills", "Food", "Services", "Entertainment"};
 
-                filterDialog.setMultiChoiceItems(categories, checkedItems, new DialogInterface.OnMultiChoiceClickListener() {
+                filterDialog.setMultiChoiceItems(cat, checkedItems, new DialogInterface.OnMultiChoiceClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int position, boolean isChecked) {
 
@@ -168,11 +227,28 @@ public class DisplayActivity extends AppCompatActivity {
                             checkedItems[position] = false;
                         }
 
+                        selectedFilters.clear();
+
                         for (int i=0; i<checkedItems.length; i++){
                             if(checkedItems[i]){
-                                System.out.println(categories[i].toString());
-                                filter(categories[i]);
+                                filter(cat[i]);
                             }
+                        }
+
+                        if(selectedFilters.isEmpty()){
+                            selectedFilters.add("all");
+                            if(currentSearch.isEmpty()) {
+                                mAdapter = new RecyclerViewAdapter(dataList, DisplayActivity.this);
+                            }else{
+                                filteredData.clear();
+                                for(DataModel d: dataList) {
+                                    if (d.getName().toLowerCase().contains(currentSearch.toLowerCase())) {
+                                        filteredData.add(d);
+                                    }
+                                }
+                                mAdapter = new RecyclerViewAdapter(filteredData, DisplayActivity.this);
+                            }
+                            recyclerView.setAdapter(mAdapter);
                         }
 
                     }
@@ -184,14 +260,5 @@ public class DisplayActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void ShowDataOnListView(DataBaseHelper dataBaseHelper2) {
-        dataArrayAdapter = new ArrayAdapter<DataModel>(DisplayActivity.this, android.R.layout.simple_list_item_1, dataBaseHelper2.getAll());
-        dataListView.setAdapter(dataArrayAdapter);
-    }
 
-
-
-    public DataBaseHelper getDataBaseHelper() {
-        return dataBaseHelper;
-    }
 }

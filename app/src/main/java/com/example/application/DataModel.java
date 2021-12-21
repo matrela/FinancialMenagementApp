@@ -24,6 +24,14 @@ public class DataModel {
         this.image = image;
     }
 
+    public DataModel(int id, String name, float amount, String category, String date) {
+        this.id = id;
+        this.name = name;
+        this.amount = amount;
+        this.category = category;
+        this.date = date;
+    }
+
     // toString for printing the content of class objects
     @Override
     public String toString() {

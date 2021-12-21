@@ -58,8 +58,8 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         holder.parentLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //send the control to the AddEditActivity
-                Intent intent = new Intent(context, AddEditActivity.class);
+                //send the control to the DisplaySingleDataActivity
+                Intent intent = new Intent(context, DisplaySingleDataActivity.class);
                 intent.putExtra("id", dataList.get(holder.getAdapterPosition()).getId());
                 context.startActivity(intent);
 

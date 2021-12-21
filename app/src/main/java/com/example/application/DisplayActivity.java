@@ -69,13 +69,19 @@ public class DisplayActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(DisplayActivity.this, AddEditActivity.class);
+                Intent intent = new Intent(DisplayActivity.this, AddActivity.class);
 
-                intent.putExtra("Go to AddEditActivity", 1);
+                intent.putExtra("Go to AddActivity", 1);
                 startActivity(intent);
             }
         });
 
+    }
+
+    public void onBackPressed(){
+        super.onBackPressed();
+        Intent intent = new Intent(this, MainActivity.class);
+        startActivity(intent);
     }
 
     private void searchWidget(){

@@ -8,7 +8,10 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import androidx.annotation.Nullable;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class DataBaseHelper extends SQLiteOpenHelper {
@@ -73,9 +76,12 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         cv.put(COLUMN_AMOUNT, dataModel.getAmount());
         cv.put(COLUMN_CATEGORY, dataModel.getCategory());
         cv.put(COLUMN_DATE, dataModel.getDate());
-        cv.put(COLUMN_IMAGE, dataModel.getImage());
+        if(!(dataModel.getDate() == null)) {
+            cv.put(COLUMN_IMAGE, dataModel.getImage());
+        }
 
         long insert = db.insert(FINANCE_TABLE, null, cv);
+
         if (insert == -1){
             return false;
         }
@@ -89,12 +95,14 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         String queryString = "DELETE FROM " + FINANCE_TABLE + " WHERE " + COLUMN_ID + " = " + dataModel.getId();
 
+        System.out.println("queryString " + queryString);
+
         try (Cursor cursor = db.rawQuery(queryString, null)) {
 
             if (cursor.moveToFirst()) {
-                return true;
-            } else {
                 return false;
+            } else {
+                return true;
             }
         }
     }
@@ -146,6 +154,18 @@ public class DataBaseHelper extends SQLiteOpenHelper {
                 String date = cursor.getString(4);
                 byte[] image = cursor.getBlob(5);
 
+                SimpleDateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                SimpleDateFormat outputDateFormat = new SimpleDateFormat("dd/MM/yyyy");
+
+                try {
+                    Date inputDateValue = inputDateFormat.parse(date);
+                    if (inputDateValue!=null) {
+                        date = outputDateFormat.format(inputDateValue);
+                    }
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+
                 DataModel newData = new DataModel(ID, name, amount, category, date, image);
                 returnList.add(newData);
 
@@ -193,5 +213,55 @@ public class DataBaseHelper extends SQLiteOpenHelper {
         db.close();
 
         return newDataModel;
+    }
+
+
+    public List<DataModel> getByMonth(String month){
+
+        List<DataModel> returnList = new ArrayList<>();
+
+        String queryString = "SELECT * FROM " + FINANCE_TABLE + " WHERE strftime('%m', " + COLUMN_DATE + ") = '" + month + "'";
+
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        Cursor cursor = db.rawQuery(queryString, null);
+
+        if(cursor.moveToFirst()) {
+            // loop through the cursor (result set) and create new data objects.
+            // Put them into the return list
+            do {
+                int ID = cursor.getInt(0);
+                String name = cursor.getString(1);
+                float amount = cursor.getFloat(2);
+                String category = cursor.getString(3);
+                String date = cursor.getString(4);
+                byte[] image = cursor.getBlob(5);
+
+                SimpleDateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+                SimpleDateFormat outputDateFormat = new SimpleDateFormat("dd/MM/yyyy");
+
+                try {
+                    Date inputDateValue = inputDateFormat.parse(date);
+                    if (inputDateValue!=null) {
+                        date = outputDateFormat.format(inputDateValue);
+                    }
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+
+                DataModel newData = new DataModel(ID, name, amount, category, date, image);
+                returnList.add(newData);
+
+            }while (cursor.moveToNext());
+        }
+        else {
+            //failure. do not add anything to the list.
+        }
+
+        // close both the cursor and the db when done.
+        cursor.close();
+        db.close();
+
+        return returnList;
     }
 }
